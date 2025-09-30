@@ -26,43 +26,66 @@ class Editorial(models.Model):
         db_table = 'editoriales'
 
 class Grado(models.Model):
-    nombre = models.CharField(max_length=100)
+    class Nivel(models.TextChoices):
+        INICIAL = 'Inicial', 'Inicial'
+        PRIMARIA = 'Primaria', 'Primaria'
+        SECUNDARIA = 'Secundaria', 'Secundaria'
+
+    nivel = models.CharField(max_length=20, choices=Nivel.choices)
+    grado_numero = models.CharField(max_length=50)  # Ej: 1°, 2°, etc.
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nivel} - {self.grado_numero}"
 
     class Meta:
         db_table = 'grados'
+        verbose_name_plural = 'Grados'
+        unique_together = ('nivel', 'grado_numero')  # evita duplicados
+        ordering = ['nivel', 'grado_numero']
 
 # =======================================================
 #  Modelos de Productos (Libros)
 # =======================================================
 
 class Libro(models.Model):
-    # Relaciones de Uno a Muchos (1:N)
-    editorial = models.ForeignKey(Editorial, on_delete=models.PROTECT) # PROTECT: Evita borrar la Editorial si tiene libros.
-    
-    # SET_NULL: Permite que el autor sea nulo si el autor se elimina (para textos escolares sin autor individual).
-    autor = models.ForeignKey(Autor, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # SET_NULL: Si se elimina el Grado, se establece a NULL.
-    grado = models.ForeignKey(Grado, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # Campos de Producto
+    # Relaciones
+    editorial = models.ForeignKey(
+        'Editorial',
+        on_delete=models.PROTECT
+    )  # Evita borrar editorial si tiene libros
+
+    autor = models.ForeignKey(
+        'Autor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )  # Opcional (hay libros sin autor individual)
+
+    grado = models.ForeignKey(
+        'Grado',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )  # Opcional (se puede usar para libros que no estén ligados a un grado específico)
+
+    # Datos principales del libro
     titulo = models.CharField(max_length=255)
-    descripcion = models.TextField(blank=True, null=True) # Opcional
-    isbn = models.CharField(max_length=100, unique=True) # Garantiza que el ISBN sea único
+    descripcion = models.TextField(blank=True, null=True)  # Opcional
+    isbn = models.CharField(max_length=100, unique=True)   # Único
     codigo_barras = models.CharField(max_length=100, blank=True, null=True)
-    pvp = models.DecimalField(max_digits=10, decimal_places=2) # Precio de venta al público
+
+    # Precios y stock
+    pvp = models.DecimalField(max_digits=10, decimal_places=2)  # Precio de venta
     descuento_editorial = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     costo_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField(default=0)
-    
-    # Imagelibro_grado_Field para almacenar la imagen localmente. Se guardará en /media/portadas/
-    portada = models.ImageField(upload_to='portadas/')
+
+    # Imagen (sin upload_to, se guardará en MEDIA_ROOT directo)
+    portada = models.ImageField()
 
     def __str__(self):
         return self.titulo
 
     class Meta:
-        db_table = 'libros' # Nombre de tabla profesional
+        db_table = 'libros'
+        ordering = ['titulo']
