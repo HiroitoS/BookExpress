@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LibrosController, LibroController, EditorialesController, EditorialController,GradosController, GradoController, AutoresController, AutorController
+from .views import LibrosController, LibroController, EditorialesController, EditorialController,GradosController, GradoController, AutoresController, AutorController, ContactoCreateView
 
 urlpatterns = [
     #--LIBROS
@@ -14,4 +14,6 @@ urlpatterns = [
     #--AUTORES
     path('autores/', view=AutoresController.as_view()),
     path('autor/<int:id>/', view=AutorController.as_view()),  # Ruta para operaciones con autor por ID
+    #--Contactenos
+    path('contacto/', ContactoCreateView.as_view(), name='crear-contacto'),
 ]

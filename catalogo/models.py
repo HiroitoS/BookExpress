@@ -18,7 +18,8 @@ class Editorial(models.Model):
     contacto = models.CharField(max_length=255, blank=True, null=True)
     telefono = models.CharField(max_length=50, blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)
-
+    logo = models.ImageField(upload_to='editoriales/', null=True, blank=True)
+    
     def __str__(self):
         return self.nombre
 
@@ -89,3 +90,34 @@ class Libro(models.Model):
     class Meta:
         db_table = 'libros'
         ordering = ['titulo']
+        
+# =======================================================
+#  Modelo de Contacto (Formulario de "Contáctenos")
+# =======================================================
+
+class Contacto(models.Model):
+    class TipoContacto(models.TextChoices):
+        LIBRO_NO_ENCONTRADO = 'Libro no encontrado', 'Libro no encontrado'
+        DOCENTE_INTERESADO = 'Docente interesado', 'Docente interesado'
+        OTRO = 'Otro', 'Otro'
+
+    tipo_contacto = models.CharField(
+        max_length=50,
+        choices=TipoContacto.choices,
+        default=TipoContacto.LIBRO_NO_ENCONTRADO
+    )
+    nombre = models.CharField(max_length=255)
+    correo = models.EmailField()
+    telefono = models.CharField(max_length=50, blank=True, null=True)
+    colegio = models.CharField(max_length=255, blank=True, null=True)
+    libro_solicitado = models.CharField(max_length=255, blank=True, null=True)
+    mensaje = models.TextField(blank=True, null=True)
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nombre} - {self.tipo_contacto}"
+
+    class Meta:
+        db_table = 'contactos'
+        verbose_name_plural = 'Contactos'
+        ordering = ['-fecha_envio']
