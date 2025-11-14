@@ -1,123 +1,63 @@
 from django.db import models
 
-# =======================================================
-#  Modelos de Clasificación
-# =======================================================
+class Producto(models.Model):
+    # 🔹 Datos generales
+    empresa = models.CharField(max_length=100)
+    nivel = models.CharField(max_length=100, blank=True, null=True)
+    grado = models.CharField(max_length=100, blank=True, null=True)
+    area = models.CharField(max_length=100, blank=True, null=True)
+    serie = models.CharField(max_length=150, blank=True, null=True)
+    descripcion_completa = models.TextField()
 
-class Autor(models.Model):
-    nombre = models.CharField(max_length=255)
+    # 🔹 Inventario y soporte
+    tipo_inventario = models.CharField(max_length=100, blank=True, null=True)
+    soporte = models.CharField(max_length=100, blank=True, null=True)
 
-    def __str__(self):
-        return self.nombre
+    # 🔹 Precios y descuentos
+    pvp_2026_con_igv = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    desc_proveedor = models.CharField(max_length=20, blank=True, null=True)
+    precio_proveedor = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
-    class Meta:
-        db_table = 'autores'
+    # 🔹 Tipo de venta
+    TIPO_VENTA_CHOICES = [
+        ('FERIA', 'Feria'),
+        ('CONSIGNA', 'Consigna'),
+        ('PUNTO_DE_VENTA', 'Punto de venta'),
+    ]
+    tipo_venta = models.CharField(max_length=20, choices=TIPO_VENTA_CHOICES, blank=True, null=True)
 
-class Editorial(models.Model):
-    nombre = models.CharField(max_length=255)
-    contacto = models.CharField(max_length=255, blank=True, null=True)
-    telefono = models.CharField(max_length=50, blank=True, null=True)
-    direccion = models.TextField(blank=True, null=True)
-    logo = models.ImageField(upload_to='editoriales/', null=True, blank=True)
-    
-    def __str__(self):
-        return self.nombre
+    # 🔹 Precios por modalidad
+    precio_be = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    precio_ie = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    precio_consigna = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    precio_coordinado = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    precio_ppff = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
-    class Meta:
-        db_table = 'editoriales'
+    # 🔹 Descuentos y comisiones
+    desc_consigna = models.CharField(max_length=20, blank=True, null=True)
+    comision = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
 
-class Grado(models.Model):
-    class Nivel(models.TextChoices):
-        INICIAL = 'Inicial', 'Inicial'
-        PRIMARIA = 'Primaria', 'Primaria'
-        SECUNDARIA = 'Secundaria', 'Secundaria'
+    # 🔹 Rentabilidad y utilidad
+    utilidad_ie = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    roi_ie = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    roi_consigna = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
-    nivel = models.CharField(max_length=20, choices=Nivel.choices)
-    grado_numero = models.CharField(max_length=50)  # Ej: 1°, 2°, etc.
-
-    def __str__(self):
-        return f"{self.nivel} - {self.grado_numero}"
-
-    class Meta:
-        db_table = 'grados'
-        verbose_name_plural = 'Grados'
-        unique_together = ('nivel', 'grado_numero')  # evita duplicados
-        ordering = ['nivel', 'grado_numero']
-
-# =======================================================
-#  Modelos de Productos (Libros)
-# =======================================================
-
-class Libro(models.Model):
-    # Relaciones
-    editorial = models.ForeignKey(
-        'Editorial',
-        on_delete=models.PROTECT
-    )  # Evita borrar editorial si tiene libros
-
-    autor = models.ForeignKey(
-        'Autor',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )  # Opcional (hay libros sin autor individual)
-
-    grado = models.ForeignKey(
-        'Grado',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )  # Opcional (se puede usar para libros que no estén ligados a un grado específico)
-
-    # Datos principales del libro
-    titulo = models.CharField(max_length=255)
-    descripcion = models.TextField(blank=True, null=True)  # Opcional
-    isbn = models.CharField(max_length=100, unique=True)   # Único
-    codigo_barras = models.CharField(max_length=100, blank=True, null=True)
-
-    # Precios y stock
-    pvp = models.DecimalField(max_digits=10, decimal_places=2)  # Precio de venta
-    descuento_editorial = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    costo_unitario = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.IntegerField(default=0)
-
-    # Imagen (sin upload_to, se guardará en MEDIA_ROOT directo)
-    portada = models.ImageField()
-
-    def __str__(self):
-        return self.titulo
+    # 🔹 Fechas automáticas
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'libros'
-        ordering = ['titulo']
-        
-# =======================================================
-#  Modelo de Contacto (Formulario de "Contáctenos")
-# =======================================================
-
-class Contacto(models.Model):
-    class TipoContacto(models.TextChoices):
-        LIBRO_NO_ENCONTRADO = 'Libro no encontrado', 'Libro no encontrado'
-        DOCENTE_INTERESADO = 'Docente interesado', 'Docente interesado'
-        OTRO = 'Otro', 'Otro'
-
-    tipo_contacto = models.CharField(
-        max_length=50,
-        choices=TipoContacto.choices,
-        default=TipoContacto.LIBRO_NO_ENCONTRADO
-    )
-    nombre = models.CharField(max_length=255)
-    correo = models.EmailField()
-    telefono = models.CharField(max_length=50, blank=True, null=True)
-    colegio = models.CharField(max_length=255, blank=True, null=True)
-    libro_solicitado = models.CharField(max_length=255, blank=True, null=True)
-    mensaje = models.TextField(blank=True, null=True)
-    fecha_envio = models.DateTimeField(auto_now_add=True)
+        verbose_name = "Producto"
+        verbose_name_plural = "Productos"
+        ordering = ["empresa", "nivel", "grado", "area", "descripcion_completa"]
+        # evita insertar exactamente el mismo producto varias veces
+        unique_together = ('empresa', 'nivel', 'grado', 'area', 'descripcion_completa')
+        # índices para acelerar búsquedas comunes
+        indexes = [
+            models.Index(fields=['empresa']),
+            models.Index(fields=['tipo_venta']),
+            models.Index(fields=['nivel', 'area']),
+        ]
 
     def __str__(self):
-        return f"{self.nombre} - {self.tipo_contacto}"
-
-    class Meta:
-        db_table = 'contactos'
-        verbose_name_plural = 'Contactos'
-        ordering = ['-fecha_envio']
+        return f"{self.empresa} — {self.descripcion_completa[:60]}"
